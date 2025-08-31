@@ -1,26 +1,20 @@
 --!/usr/bin/env lua
--- This LocalScript MANUALLY INSPECTS the live character model.
--- ACCESSORIES HAVE BEEN REMOVED to troubleshoot errors.
+-- (NEW & IMPROVED) This script inspects the live character and prints a ready-to-use Lua table.
 
 local Players = game:GetService("Players")
-
--- Get the local player and wait for their character to be added
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
+local character = Players.LocalPlayer.Character or Players.LocalPlayer.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 
--- Wait for the character to be fully assembled by game scripts
 task.wait(3)
 
-local function manuallyInspectCharacter()
-    print("--- Starting Manual Inspection of Current Character Model (No Accessories) ---")
+local function generateCharacterDataTable()
+    print("--- Generating Character Data Table... ---")
 
-    -- This table will hold all the data we find
-    local mimicData = {}
+    local data = {}
 
-    -- Step 1: Get the base description to source the Body Part IDs, which are hard to find manually.
+    -- Get Body Part IDs from the base description
     local baseDescription = humanoid:GetAppliedDescription()
-    mimicData.BodyParts = {
+    data.BodyParts = {
         Head = baseDescription.Head,
         Torso = baseDescription.Torso,
         LeftArm = baseDescription.LeftArm,
@@ -29,97 +23,116 @@ local function manuallyInspectCharacter()
         RightLeg = baseDescription.RightLeg,
     }
 
-    -- Step 2: Manually inspect BodyColors
-    mimicData.BodyColors = {}
+    -- Manually inspect BodyColors (if they exist)
     local bodyColors = character:FindFirstChild("BodyColors")
     if bodyColors then
-        mimicData.BodyColors.Head = bodyColors.HeadColor3
-        mimicData.BodyColors.Torso = bodyColors.TorsoColor3
-        mimicData.BodyColors.LeftArm = bodyColors.LeftArmColor3
-        mimicData.BodyColors.RightArm = bodyColors.RightArmColor3
-        mimicData.BodyColors.LeftLeg = bodyColors.LeftLegColor3
-        mimicData.BodyColors.RightLeg = bodyColors.RightLegColor3
+        data.BodyColors = {
+            HeadColor = bodyColors.HeadColor3,
+            TorsoColor = bodyColors.TorsoColor3,
+            LeftArmColor = bodyColors.LeftArmColor3,
+            RightArmColor = bodyColors.RightArmColor3,
+            LeftLegColor = bodyColors.LeftLegColor3,
+            RightLegColor = bodyColors.RightLegColor3,
+        }
     end
 
-    -- Step 3: Manually inspect Clothing and Face
-    mimicData.Clothing = {}
+    -- Manually inspect Clothing and Face, EXTRACTING IDs from URLs
+    local function getAssetIdFromUrl(url)
+        return tonumber(string.match(url, "%d+$")) or 0
+    end
+
     local shirt = character:FindFirstChildOfClass("Shirt")
-    mimicData.Clothing.Shirt = shirt and shirt.ShirtTemplate or 0
-
     local pants = character:FindFirstChildOfClass("Pants")
-    mimicData.Clothing.Pants = pants and pants.PantsTemplate or 0
-
     local shirtGraphic = character:FindFirstChildOfClass("ShirtGraphic")
-    mimicData.Clothing.TShirt = shirtGraphic and shirtGraphic.Graphic or 0
-    
-    local face = character.Head:FindFirstChild("Face")
-    if face and face:IsA("Decal") and face.Texture:match("rbxassetid://") then
-        mimicData.Clothing.Face = tonumber(face.Texture:match("%d+")) or 0
-    else
-        mimicData.Clothing.Face = 0
-    end
+    local face = character.Head and character.Head:FindFirstChild("Face")
 
-    -- Step 4: Manually inspect Scaling Values from the Humanoid
-    mimicData.Scaling = {}
+    data.Clothing = {
+        Shirt = (shirt and getAssetIdFromUrl(shirt.ShirtTemplate)) or 0,
+        Pants = (pants and getAssetIdFromUrl(pants.PantsTemplate)) or 0,
+        TShirt = (shirtGraphic and shirtGraphic.Graphic) or 0,
+        Face = (face and face:IsA("Decal") and getAssetIdFromUrl(face.Texture)) or 0
+    }
+
+    -- Manually inspect Scaling Values
     local function getScaleValue(scaleName, default)
         local scaleInstance = humanoid:FindFirstChild(scaleName)
         return (scaleInstance and scaleInstance:IsA("NumberValue")) and scaleInstance.Value or default
     end
-    mimicData.Scaling.HeadScale = getScaleValue("HeadScale", 1)
-    mimicData.Scaling.BodyDepthScale = getScaleValue("BodyDepthScale", 1)
-    mimicData.Scaling.BodyHeightScale = getScaleValue("BodyHeightScale", 1)
-    mimicData.Scaling.BodyWidthScale = getScaleValue("BodyWidthScale", 1)
-    mimicData.Scaling.BodyTypeScale = getScaleValue("BodyTypeScale", 0)
-    mimicData.Scaling.ProportionScale = getScaleValue("BodyProportionScale", 0)
+    data.Scaling = {
+        HeadScale = getScaleValue("HeadScale", 1),
+        DepthScale = getScaleValue("BodyDepthScale", 1),
+        HeightScale = getScaleValue("BodyHeightScale", 1),
+        WidthScale = getScaleValue("BodyWidthScale", 1),
+        BodyTypeScale = getScaleValue("BodyTypeScale", 0),
+        ProportionScale = getScaleValue("BodyProportionScale", 0),
+    }
 
-    -- Step 5: Format and Print the gathered data
-    local outputLines = {}
-    local function log(text) table.insert(outputLines, text) end
-    
-    log("--- MANUAL INSPECTION DATA COMPLETE ---")
-    
-    log("\n--- Body Parts (Asset IDs) ---")
-    log("Head: " .. tostring(mimicData.BodyParts.Head))
-    log("Torso: " .. tostring(mimicData.BodyParts.Torso))
-    log("Left Arm: " .. tostring(mimicData.BodyParts.LeftArm))
-    log("Right Arm: " .. tostring(mimicData.BodyParts.RightArm))
-    log("Left Leg: " .. tostring(mimicData.BodyParts.LeftLeg))
-    log("Right Leg: " .. tostring(mimicData.BodyParts.RightLeg))
+    -- Format the data into a clean, copy-pasteable Lua string
+    local outputString = [[
+-- This data was generated by the in-game inspection script.
+-- Paste this entire block into the Roblox Studio model builder script.
 
-    if mimicData.BodyColors then
-        log("\n--- Body Colors (Color3) ---")
-        log("Head Color: " .. tostring(mimicData.BodyColors.Head))
-        log("Torso Color: " .. tostring(mimicData.BodyColors.Torso))
-        log("Left Arm Color: " .. tostring(mimicData.BodyColors.LeftArm))
-        log("Right Arm Color: " .. tostring(mimicData.BodyColors.RightArm))
-        log("Left Leg Color: " .. tostring(mimicData.BodyColors.LeftLeg))
-        log("Right Leg Color: " .. tostring(mimicData.BodyColors.RightLeg))
+local characterMimicData = {
+    BodyParts = {
+        Head = %d,
+        Torso = %d,
+        LeftArm = %d,
+        RightArm = %d,
+        LeftLeg = %d,
+        RightLeg = %d,
+    },
+    Clothing = {
+        Shirt = %d,
+        Pants = %d,
+        GraphicTShirt = %d,
+        Face = %d,
+    },
+    Scaling = {
+        BodyTypeScale = %f,
+        ProportionScale = %f,
+        HeadScale = %f,
+        HeightScale = %f,
+        WidthScale = %f,
+        DepthScale = %f,
+    },
+]]
+    
+    local finalString = string.format(outputString,
+        data.BodyParts.Head, data.BodyParts.Torso, data.BodyParts.LeftArm, data.BodyParts.RightArm, data.BodyParts.LeftLeg, data.BodyParts.RightLeg,
+        data.Clothing.Shirt, data.Clothing.Pants, data.Clothing.TShirt, data.Clothing.Face,
+        data.Scaling.BodyTypeScale, data.Scaling.ProportionScale, data.Scaling.HeadScale, data.Scaling.HeightScale, data.Scaling.WidthScale, data.Scaling.DepthScale
+    )
+    
+    -- Add the BodyColors part only if it exists
+    if data.BodyColors then
+        local colorsString = string.format([[
+    BodyColors = {
+        HeadColor = Color3.new(%f, %f, %f),
+        TorsoColor = Color3.new(%f, %f, %f),
+        LeftArmColor = Color3.new(%f, %f, %f),
+        RightArmColor = Color3.new(%f, %f, %f),
+        LeftLegColor = Color3.new(%f, %f, %f),
+        RightLegColor = Color3.new(%f, %f, %f),
+    },
+]], data.BodyColors.Head.R, data.BodyColors.Head.G, data.BodyColors.Head.B,
+   data.BodyColors.Torso.R, data.BodyColors.Torso.G, data.BodyColors.Torso.B,
+   data.BodyColors.LeftArm.R, data.BodyColors.LeftArm.G, data.BodyColors.LeftArm.B,
+   data.BodyColors.RightArm.R, data.BodyColors.RightArm.G, data.BodyColors.RightArm.B,
+   data.BodyColors.LeftLeg.R, data.BodyColors.LeftLeg.G, data.BodyColors.LeftLeg.B,
+   data.BodyColors.RightLeg.R, data.BodyColors.RightLeg.G, data.BodyColors.RightLeg.B)
+        finalString = finalString .. colorsString
     end
     
-    log("\n--- Clothing & Face (Asset IDs) ---")
-    log("Shirt: " .. tostring(mimicData.Clothing.Shirt))
-    log("Pants: " .. tostring(mimicData.Clothing.Pants))
-    log("Graphic T-Shirt: " .. tostring(mimicData.Clothing.TShirt))
-    log("Face: " .. tostring(mimicData.Clothing.Face))
-    
-    log("\n--- Scaling Values ---")
-    log("BodyTypeScale: " .. tostring(mimicData.Scaling.BodyTypeScale))
-    log("ProportionScale: " .. tostring(mimicData.Scaling.ProportionScale))
-    log("HeadScale: " .. tostring(mimicData.Scaling.HeadScale))
-    log("HeightScale: " .. tostring(mimicData.Scaling.BodyHeightScale))
-    log("WidthScale: " .. tostring(mimicData.Scaling.BodyWidthScale))
-    log("DepthScale: " .. tostring(mimicData.Scaling.BodyDepthScale))
-    
-    -- Print and copy to clipboard
-    local fullOutput = table.concat(outputLines, "\n")
-    print(fullOutput)
-    
+    finalString = finalString .. "}"
+
+    -- Print the final result and copy to clipboard
+    print(finalString)
     if setclipboard then
-        setclipboard(fullOutput)
-        print("\n--- Manually inspected character data (no accessories) copied to clipboard! ---")
+        setclipboard(finalString)
+        print("\n--- ✅ Character data table copied to clipboard! ---")
     else
-        warn("\nsetclipboard is not available.")
+        warn("\n--- ⚠️ setclipboard is not available. Manually copy the table above. ---")
     end
 end
 
-manuallyInspectCharacter()
+generateCharacterDataTable()
