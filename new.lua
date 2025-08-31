@@ -1,6 +1,6 @@
 --!/usr/bin/env lua
--- This LocalScript MANUALLY INSPECTS the live character model to build an accurate HumanoidDescription.
--- This avoids issues where GetAppliedDescription() might return outdated or cached data.
+-- This LocalScript MANUALLY INSPECTS the live character model.
+-- ACCESSORIES HAVE BEEN REMOVED to troubleshoot errors.
 
 local Players = game:GetService("Players")
 
@@ -13,13 +13,12 @@ local humanoid = character:WaitForChild("Humanoid")
 task.wait(3)
 
 local function manuallyInspectCharacter()
-    print("--- Starting Manual Inspection of Current Character Model ---")
+    print("--- Starting Manual Inspection of Current Character Model (No Accessories) ---")
 
     -- This table will hold all the data we find
     local mimicData = {}
 
     -- Step 1: Get the base description to source the Body Part IDs, which are hard to find manually.
-    -- We will overwrite everything else with our manually inspected, more accurate data.
     local baseDescription = humanoid:GetAppliedDescription()
     mimicData.BodyParts = {
         Head = baseDescription.Head,
@@ -73,10 +72,7 @@ local function manuallyInspectCharacter()
     mimicData.Scaling.BodyTypeScale = getScaleValue("BodyTypeScale", 0)
     mimicData.Scaling.ProportionScale = getScaleValue("BodyProportionScale", 0)
 
-    -- Step 5: Get the CURRENT accessories using the reliable GetAccessories() method
-    mimicData.Accessories = humanoid:GetAccessories()
-
-    -- Step 6: Format and Print the gathered data
+    -- Step 5: Format and Print the gathered data
     local outputLines = {}
     local function log(text) table.insert(outputLines, text) end
     
@@ -114,22 +110,13 @@ local function manuallyInspectCharacter()
     log("WidthScale: " .. tostring(mimicData.Scaling.BodyWidthScale))
     log("DepthScale: " .. tostring(mimicData.Scaling.BodyDepthScale))
     
-    log("\n--- Accessories ---")
-    if #mimicData.Accessories > 0 then
-        for i, accInfo in ipairs(mimicData.Accessories) do
-            log(string.format("  [%d] AssetId: %d, Type: %s, IsLayered: %s", i, accInfo.AssetId, accInfo.AccessoryType.Name, tostring(accInfo.IsLayered)))
-        end
-    else
-        log("  No accessories found.")
-    end
-
     -- Print and copy to clipboard
     local fullOutput = table.concat(outputLines, "\n")
     print(fullOutput)
     
     if setclipboard then
         setclipboard(fullOutput)
-        print("\n--- Manually inspected character data copied to clipboard! ---")
+        print("\n--- Manually inspected character data (no accessories) copied to clipboard! ---")
     else
         warn("\nsetclipboard is not available.")
     end
