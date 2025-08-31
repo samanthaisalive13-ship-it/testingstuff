@@ -1,3 +1,4 @@
+-- This LocalScript grabs the description from the player's CURRENT IN-GAME character model.
 local Players = game:GetService("Players")
 
 -- Get the local player and wait for their character to be added
@@ -10,61 +11,56 @@ task.wait(2)
 
 -- Function to fetch and print the character's description
 local function printCharacterDescription()
-    print(`Fetching HumanoidDescription for {player.Name} (UserId: {player.UserId})...`)
+    print(`Fetching HumanoidDescription for {player.Name}'s current in-game character...`)
 
-    -- Use a pcall (protected call) in case the service fails to get the description
-    local success, humanoidDescription = pcall(function()
-        return Players:GetHumanoidDescriptionFromUserId(player.UserId)
-    end)
+    -- This is the key change: GetAppliedDescription() reads the current character model.
+    local humanoidDescription = humanoid:GetAppliedDescription()
 
-    if not success or not humanoidDescription then
-        warn("Could not fetch HumanoidDescription. Error:", tostring(humanoidDescription))
-        return
+    -- Create a table to store all output lines
+    local outputLines = {}
+    local function logAndStore(text)
+        print(text)
+        table.insert(outputLines, text)
     end
-
-    -- Create a table to store output for clipboard
-    local output = {"--- CHARACTER DESCRIPTION LOADED ---"}
+    
+    logAndStore("--- CHARACTER DESCRIPTION LOADED ---")
 
     -- 1. Body Parts (the mesh/package for each limb)
-    table.insert(output, "\n--- Body Parts (Asset IDs) ---")
-    table.insert(output, "Head: " .. tostring(humanoidDescription.Head))
-    table.insert(output, "Torso: " .. tostring(humanoidDescription.Torso))
-    table.insert(output, "Left Arm: " .. tostring(humanoidDescription.LeftArm))
-    table.insert(output, "Right Arm: " .. tostring(humanoidDescription.RightArm))
-    table.insert(output, "Left Leg: " .. tostring(humanoidDescription.LeftLeg))
-    table.insert(output, "Right Leg: " .. tostring(humanoidDescription.RightLeg))
-    print(table.concat(output, "\n"))
+    logAndStore("\n--- Body Parts (Asset IDs) ---")
+    logAndStore("Head: " .. tostring(humanoidDescription.Head))
+    logAndStore("Torso: " .. tostring(humanoidDescription.Torso))
+    logAndStore("Left Arm: " .. tostring(humanoidDescription.LeftArm))
+    logAndStore("Right Arm: " .. tostring(humanoidDescription.RightArm))
+    logAndStore("Left Leg: " .. tostring(humanoidDescription.LeftLeg))
+    logAndStore("Right Leg: " .. tostring(humanoidDescription.RightLeg))
 
     -- 2. Body Colors
-    table.insert(output, "\n--- Body Colors (Color3) ---")
-    table.insert(output, "Head Color: " .. tostring(humanoidDescription.HeadColor))
-    table.insert(output, "Torso Color: " .. tostring(humanoidDescription.TorsoColor))
-    table.insert(output, "Left Arm Color: " .. tostring(humanoidDescription.LeftArmColor))
-    table.insert(output, "Right Arm Color: " .. tostring(humanoidDescription.RightArmColor))
-    table.insert(output, "Left Leg Color: " .. tostring(humanoidDescription.LeftLegColor))
-    table.insert(output, "Right Leg Color: " .. tostring(humanoidDescription.RightLegColor))
-    print(table.concat(output, "\n"))
+    logAndStore("\n--- Body Colors (Color3) ---")
+    logAndStore("Head Color: " .. tostring(humanoidDescription.HeadColor))
+    logAndStore("Torso Color: " .. tostring(humanoidDescription.TorsoColor))
+    logAndStore("Left Arm Color: " .. tostring(humanoidDescription.LeftArmColor))
+    logAndStore("Right Arm Color: " .. tostring(humanoidDescription.RightArmColor))
+    logAndStore("Left Leg Color: " .. tostring(humanoidDescription.LeftLegColor))
+    logAndStore("Right Leg Color: " .. tostring(humanoidDescription.RightLegColor))
 
     -- 3. Clothing and Face
-    table.insert(output, "\n--- Clothing & Face (Asset IDs) ---")
-    table.insert(output, "Shirt: " .. tostring(humanoidDescription.Shirt))
-    table.insert(output, "Pants: " .. tostring(humanoidDescription.Pants))
-    table.insert(output, "Graphic T-Shirt: " .. tostring(humanoidDescription.GraphicTShirt))
-    table.insert(output, "Face: " .. tostring(humanoidDescription.Face))
-    print(table.concat(output, "\n"))
+    logAndStore("\n--- Clothing & Face (Asset IDs) ---")
+    logAndStore("Shirt: " .. tostring(humanoidDescription.Shirt))
+    logAndStore("Pants: " .. tostring(humanoidDescription.Pants))
+    logAndStore("Graphic T-Shirt: " .. tostring(humanoidDescription.GraphicTShirt))
+    logAndStore("Face: " .. tostring(humanoidDescription.Face))
 
     -- 4. Scaling (determines the shape and proportions of the character)
-    table.insert(output, "\n--- Scaling Values ---")
-    table.insert(output, "BodyTypeScale: " .. tostring(humanoidDescription.BodyTypeScale))
-    table.insert(output, "ProportionScale: " .. tostring(humanoidDescription.ProportionScale))
-    table.insert(output, "HeadScale: " .. tostring(humanoidDescription.HeadScale))
-    table.insert(output, "HeightScale: " .. tostring(humanoidDescription.HeightScale))
-    table.insert(output, "WidthScale: " .. tostring(humanoidDescription.WidthScale))
-    table.insert(output, "DepthScale: " .. tostring(humanoidDescription.DepthScale))
-    print(table.concat(output, "\n"))
+    logAndStore("\n--- Scaling Values ---")
+    logAndStore("BodyTypeScale: " .. tostring(humanoidDescription.BodyTypeScale))
+    logAndStore("ProportionScale: " .. tostring(humanoidDescription.ProportionScale))
+    logAndStore("HeadScale: " .. tostring(humanoidDescription.HeadScale))
+    logAndStore("HeightScale: " .. tostring(humanoidDescription.HeightScale))
+    logAndStore("WidthScale: " .. tostring(humanoidDescription.WidthScale))
+    logAndStore("DepthScale: " .. tostring(humanoidDescription.DepthScale))
 
     -- 5. Accessories (Hats, Hair, Glasses, etc.)
-    table.insert(output, "\n--- Accessories ---")
+    logAndStore("\n--- Accessories ---")
     local accessories = humanoidDescription:GetAccessories(true) -- 'true' includes rigid accessories
     if #accessories > 0 then
         for i, accessoryInfo in ipairs(accessories) do
@@ -75,23 +71,22 @@ local function printCharacterDescription()
                 accessoryInfo.AccessoryType.Name,
                 tostring(accessoryInfo.IsLayered)
             )
-            table.insert(output, accessoryStr)
-            print(accessoryStr)
+            logAndStore(accessoryStr)
         end
     else
-        table.insert(output, "  No accessories found.")
-        print("  No accessories found.")
+        logAndStore("  No accessories found.")
     end
 
-    table.insert(output, "\n--- MIMIC DATA COMPLETE ---")
-    print("\n--- MIMIC DATA COMPLETE ---")
-
-    -- Copy to clipboard
+    logAndStore("\n--- MIMIC DATA COMPLETE ---")
+    
+    -- (I've cleaned up your original print logic to be more efficient)
+    -- Now, copy the final concatenated string to the clipboard
+    local fullOutput = table.concat(outputLines, "\n")
     if setclipboard then
-        setclipboard(table.concat(output, "\n"))
-        print("Character description copied to clipboard!")
+        setclipboard(fullOutput)
+        print("\nCharacter description copied to clipboard!")
     else
-        warn("setclipboard is not supported by this executor.")
+        warn("\nsetclipboard is not available. To copy, select the text in the output window.")
     end
 end
 
